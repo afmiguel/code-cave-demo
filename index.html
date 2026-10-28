@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Code cave e trampolim</title>
+<title>Inline hooking com code cave</title>
 <style>
   :root { color-scheme: light; }
   * { box-sizing: border-box; }
@@ -62,7 +62,7 @@
 </head>
 <body>
 <div class="card">
-  <div class="head-title">Code cave e trampolim</div>
+  <div class="head-title">Inline hooking (detour) com code cave</div>
   <div class="head-desc">Desvio por chamada de função: a instrução não é apagada — ela é movida para uma região de memória limpa. No lugar dela entra um salto; o programa executa o código inserido, a instrução original realocada e retorna.</div>
   <div class="divider"></div>
 
@@ -97,8 +97,8 @@
   <text id="capB" class="ts fade" x="416" y="256" opacity="0">a Instrução 3, movida — não sumiu</text>
 
   <g id="slotC" class="fade c-purple" opacity="0"><rect x="412" y="270" width="212" height="46" rx="8" stroke-width="1"/>
-  <text class="th" x="428" y="290">Retorno</text>
-  <text class="ts" x="428" y="307">volta ao programa, no mesmo ponto</text></g>
+  <text class="th" x="428" y="290">Trampolim</text>
+  <text class="ts" x="428" y="307">salto de volta ao programa</text></g>
 
   <path id="jmpTo" class="fade" d="M252 179 L300 179 L300 169 L410 169" fill="none" stroke="#D85A30" stroke-width="2" opacity="0" marker-end="url(#arrow)"/>
   <path id="jmpBack" class="fade" d="M410 293 L300 293 L300 223 L252 223" fill="none" stroke="#534AB7" stroke-width="2" opacity="0" marker-end="url(#arrow)"/>
@@ -123,7 +123,8 @@
 
   <div class="glossary">
     <div class="term"><span class="term-name">Code cave</span> — um trecho de espaço livre e não utilizado dentro do próprio executável (em geral o preenchimento que sobra do alinhamento das seções em memória). Como já está ali, vazio, dá para escrever código novo nele sem empurrar nem deslocar o resto do programa. É a "região de memória limpa" do diagrama.</div>
-    <div class="term"><span class="term-name">Trampolim</span> — o desvio que faz a execução "quicar" para outro lugar e voltar. No lugar da instrução original entra um salto (a chamada) para a code cave; lá o programa roda o código inserido, executa a instrução original que foi guardada e então retorna ao ponto seguinte. O nome vem justamente desse ir-e-voltar.</div>
+    <div class="term"><span class="term-name">Trampolim</span> — o pequeno trecho, dentro da code cave, que guarda a instrução original sobrescrita e faz o salto de volta ao programa. É a peça que devolve o fluxo, fazendo a execução "quicar" e voltar.</div>
+    <div class="term"><span class="term-name">Inline hooking (detour)</span> — o nome técnico da técnica como um todo: sobrescrever uma instrução do fluxo original com um salto para a code cave, executar o código inserido e, pelo trampolim, retornar ao ponto seguinte. "Detour" ficou popular pela biblioteca Microsoft Detours.</div>
   </div>
 </div>
 
@@ -159,7 +160,7 @@
       case 'i3': return patched ? 'Instrução 3: aqui está a chamada (call). Próximo play desvia para a direita.' : 'Instrução 3.';
       case 'ca': return 'Desvio: executa primeiro o código inserido pelo invasor.';
       case 'cb': return 'Executa a instrução original — a Instrução 3, que foi movida para cá, intacta.';
-      case 'cc': return 'Retorno: pronto para voltar ao programa.';
+      case 'cc': return 'Trampolim: faz o salto de volta ao programa.';
       case 'i4': return patched ? 'De volta ao programa: Instrução 4.' : 'Instrução 4.';
       case 'i5': return 'Instrução 5.';
       case 'i6': return 'Instrução 6.';

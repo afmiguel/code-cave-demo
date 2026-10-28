@@ -37,7 +37,8 @@
 
   #exec { transition: transform .45s ease; }
   #exec.snap { transition: none; }
-  .slot, .arr-dyn { transition: opacity .35s ease; }
+  .fade { transition: opacity .4s ease; }
+  #callbox { transition: opacity .4s ease .15s; }
 
   .controls { display: flex; gap: 14px; flex-wrap: wrap; align-items: center; margin-top: 10px; }
   .status { margin-top: 12px; font-size: 13px; color: #5f5e5a; min-height: 20px; }
@@ -52,19 +53,19 @@
   .track:has(input:checked) { background: #185FA5; }
   .knob { position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; background: #fff;
           border-radius: 50%; transition: transform .2s; pointer-events: none; }
+  .track input { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; margin: 0; cursor: pointer; }
   .track input:checked ~ .knob { transform: translateX(16px); }
-  .track input { position: absolute; opacity: 0; width: 100%; height: 100%; cursor: pointer; margin: 0; }
 </style>
 </head>
 <body>
 <div class="card">
   <div class="head-title">Code cave e trampolim</div>
-  <div class="head-desc">Desvio por chamada de função: troca-se uma instrução por um salto para uma região de memória limpa, roda-se um código inserido mais a instrução original, e retorna-se ao programa — sem deslocar nada.</div>
+  <div class="head-desc">Desvio por chamada de função: a instrução não é apagada — ela é movida para uma região de memória limpa. No lugar dela entra um salto; o programa executa o código inserido, a instrução original realocada e retorna.</div>
   <div class="divider"></div>
 
   <svg width="100%" viewBox="0 0 680 420" role="img">
-  <title>Trampolim em memória, passo a passo</title>
-  <desc>O ponteiro avança uma caixinha por vez; sem a chamada desce reto, com a chamada na instrução 3 desvia para a região limpa e volta.</desc>
+  <title>Trampolim em memória com instrução móvel</title>
+  <desc>A instrução 3 desliza do programa para a região limpa quando a chamada é ligada.</desc>
   <defs>
   <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker>
   </defs>
@@ -74,7 +75,9 @@
 
   <g id="row1" class="c-gray"><rect x="54" y="74" width="196" height="34" rx="8" stroke-width="0.5"/><text class="ts" x="70" y="96">Instrução 1</text></g>
   <g id="row2" class="c-gray"><rect x="54" y="118" width="196" height="34" rx="8" stroke-width="0.5"/><text class="ts" x="70" y="140">Instrução 2</text></g>
-  <g id="row3" class="c-gray"><rect id="row3rect" x="54" y="162" width="196" height="34" rx="8" stroke-width="0.5"/><text id="row3txt" class="ts" x="70" y="184">Instrução 3</text></g>
+
+  <g id="callbox" class="c-red" opacity="0"><rect x="54" y="162" width="196" height="34" rx="8" stroke-width="1"/><text class="ts" x="70" y="184">Chamada de função (call) →</text></g>
+
   <g id="row4" class="c-gray"><rect x="54" y="206" width="196" height="34" rx="8" stroke-width="0.5"/><text class="ts" x="70" y="228">Instrução 4</text></g>
   <g id="row5" class="c-gray"><rect x="54" y="250" width="196" height="34" rx="8" stroke-width="0.5"/><text class="ts" x="70" y="272">Instrução 5</text></g>
   <g id="row6" class="c-gray"><rect x="54" y="294" width="196" height="34" rx="8" stroke-width="0.5"/><text class="ts" x="70" y="316">Instrução 6</text></g>
@@ -84,18 +87,20 @@
   <text class="th" x="416" y="114">Região de memória limpa</text>
   <text class="ts" x="416" y="132">espaço livre do executável</text></g>
 
-  <g id="slotA" class="slot c-coral" opacity="0"><rect x="412" y="146" width="212" height="52" rx="8" stroke-width="1"/>
-  <text class="th" x="428" y="168">Código inserido</text>
-  <text class="ts" x="428" y="186">o que o invasor acrescenta</text></g>
-  <g id="slotB" class="slot c-blue" opacity="0"><rect x="412" y="206" width="212" height="52" rx="8" stroke-width="1"/>
-  <text class="th" x="428" y="228">Instrução original</text>
-  <text class="ts" x="428" y="246">a Instrução 3, guardada aqui</text></g>
-  <g id="slotC" class="slot c-purple" opacity="0"><rect x="412" y="266" width="212" height="52" rx="8" stroke-width="1"/>
-  <text class="th" x="428" y="288">Retorno</text>
-  <text class="ts" x="428" y="306">volta ao programa, no mesmo ponto</text></g>
+  <g id="slotA" class="fade c-coral" opacity="0"><rect x="412" y="146" width="212" height="46" rx="8" stroke-width="1"/>
+  <text class="th" x="428" y="166">Código inserido</text>
+  <text class="ts" x="428" y="183">o que o invasor acrescenta</text></g>
 
-  <path id="jmpTo" class="arr-dyn" d="M252 179 L300 179 L300 172 L410 172" fill="none" stroke="#D85A30" stroke-width="2" opacity="0" marker-end="url(#arrow)"/>
-  <path id="jmpBack" class="arr-dyn" d="M410 292 L300 292 L300 223 L252 223" fill="none" stroke="#534AB7" stroke-width="2" opacity="0" marker-end="url(#arrow)"/>
+  <text id="capB" class="ts fade" x="416" y="256" opacity="0">a Instrução 3, movida — não sumiu</text>
+
+  <g id="slotC" class="fade c-purple" opacity="0"><rect x="412" y="270" width="212" height="46" rx="8" stroke-width="1"/>
+  <text class="th" x="428" y="290">Retorno</text>
+  <text class="ts" x="428" y="307">volta ao programa, no mesmo ponto</text></g>
+
+  <path id="jmpTo" class="fade" d="M252 179 L300 179 L300 169 L410 169" fill="none" stroke="#D85A30" stroke-width="2" opacity="0" marker-end="url(#arrow)"/>
+  <path id="jmpBack" class="fade" d="M410 293 L300 293 L300 223 L252 223" fill="none" stroke="#534AB7" stroke-width="2" opacity="0" marker-end="url(#arrow)"/>
+
+  <g id="inst3" class="c-gray" transform="translate(0,0)"><rect x="54" y="162" width="196" height="34" rx="8" stroke-width="0.5"/><text class="ts" x="70" y="184">Instrução 3</text></g>
 
   <g id="exec" style="transform:translate(266px,91px)">
   <circle cx="0" cy="0" r="7" fill="none" stroke="#185FA5" stroke-width="2"/>
@@ -103,7 +108,7 @@
   </g>
   </svg>
 
-  <div class="status" id="status">Programa íntegro, sem a chamada. Ponteiro na Instrução 1 — play desce reto, uma caixinha por vez.</div>
+  <div class="status" id="status">Programa íntegro, sem a chamada. Ponteiro na Instrução 1 — play desce reto, uma instrução por vez.</div>
   <div class="controls">
   <button class="btn primary" id="bPlay">▶ play (próximo passo)</button>
   <button class="btn" id="b0">reiniciar</button>
@@ -116,20 +121,36 @@
 
 <script>
 (function(){
-  var exec=document.getElementById('exec'), st=document.getElementById('status');
+  var exec=document.getElementById('exec'), inst3=document.getElementById('inst3'), st=document.getElementById('status');
   var patched=false, pos='i1';
   var COORD={ i1:[266,91], i2:[266,135], i3:[266,179], i4:[266,223], i5:[266,267], i6:[266,311], i7:[266,355],
-              ca:[400,172], cb:[400,232], cc:[400,292] };
+              ca:[400,169], cb:[400,221], cc:[400,293] };
   function move(s){ var c=COORD[s]; exec.style.transform='translate('+c[0]+'px,'+c[1]+'px)'; }
   function snap(on){ exec.classList.toggle('snap',on); }
   function say(t){ st.textContent=t; }
   function set(id,op){ document.getElementById(id).setAttribute('opacity',op); }
+
+  var i3x=0, i3y=0, i3raf=null;
+  function slideInst3(tx,ty){
+    if(i3raf) cancelAnimationFrame(i3raf);
+    var sx=i3x, sy=i3y, dur=700, t0=null;
+    function frame(ts){
+      if(t0===null) t0=ts;
+      var p=Math.min(1,(ts-t0)/dur);
+      var e=p<0.5 ? 2*p*p : 1-Math.pow(-2*p+2,2)/2;
+      var x=sx+(tx-sx)*e, y=sy+(ty-sy)*e;
+      inst3.setAttribute('transform','translate('+x+','+y+')');
+      if(p<1){ i3raf=requestAnimationFrame(frame); } else { i3x=tx; i3y=ty; i3raf=null; inst3.setAttribute('transform','translate('+tx+','+ty+')'); }
+    }
+    i3raf=requestAnimationFrame(frame);
+  }
+
   function desc(s){
     switch(s){
       case 'i2': return 'Instrução 2.';
       case 'i3': return patched ? 'Instrução 3: aqui está a chamada (call). Próximo play desvia para a direita.' : 'Instrução 3.';
-      case 'ca': return 'Desvio: saiu para a direita e executa o código inserido.';
-      case 'cb': return 'Executa a instrução original, que estava guardada na região limpa.';
+      case 'ca': return 'Desvio: executa primeiro o código inserido pelo invasor.';
+      case 'cb': return 'Executa a instrução original — a Instrução 3, que foi movida para cá, intacta.';
       case 'cc': return 'Retorno: pronto para voltar ao programa.';
       case 'i4': return patched ? 'De volta ao programa: Instrução 4.' : 'Instrução 4.';
       case 'i5': return 'Instrução 5.';
@@ -151,18 +172,20 @@
   }
   function setCall(on){
     patched=on; pos='i1';
-    var r3=document.getElementById('row3'), rect=document.getElementById('row3rect'), txt=document.getElementById('row3txt');
     var v=on?1:0;
-    ['slotA','slotB','slotC','jmpTo','jmpBack'].forEach(function(id){ set(id,v); });
-    if(on){ r3.setAttribute('class','c-red'); rect.setAttribute('stroke-width','1'); txt.textContent='Chamada de função (call) →';
-      say('Chamada ligada na Instrução 3. Ponteiro na Instrução 1 — play avança uma caixinha; na 3 ele desviará.'); }
-    else { r3.setAttribute('class','c-gray'); rect.setAttribute('stroke-width','0.5'); txt.textContent='Instrução 3';
-      say('Programa íntegro, sem a chamada. Ponteiro na Instrução 1 — play desce reto, uma caixinha por vez.'); }
+    ['slotA','slotC','jmpTo','jmpBack','capB','callbox'].forEach(function(id){ set(id,v); });
+    if(on){
+      slideInst3(358,42);
+      say('A Instrução 3 está deslizando para a região limpa; um call ocupa o lugar dela. Ponteiro na Instrução 1 — na 3 ele desviará.');
+    } else {
+      slideInst3(0,0);
+      say('Programa íntegro, sem a chamada. Ponteiro na Instrução 1 — play desce reto, uma instrução por vez.');
+    }
     snap(true); move('i1'); setTimeout(function(){snap(false);},30);
   }
   function reset(){
     pos='i1'; snap(true); move('i1'); setTimeout(function(){snap(false);},30);
-    say(patched ? 'Reiniciado. Ponteiro na Instrução 1 — play avança; na 3 ele desviará.' : 'Reiniciado. Ponteiro na Instrução 1 — play desce reto, uma caixinha por vez.');
+    say(patched ? 'Reiniciado. Ponteiro na Instrução 1 — play avança; na 3 ele desviará.' : 'Reiniciado. Ponteiro na Instrução 1 — play desce reto, uma instrução por vez.');
   }
   document.getElementById('bPlay').addEventListener('click', step);
   document.getElementById('b0').addEventListener('click', reset);

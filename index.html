@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Code cave e trampolim</title>
+<style>
+  :root { color-scheme: light; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #ffffff; }
+  .card {
+    max-width: 720px; margin: 0 auto; padding: 18px;
+    font-family: -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    color: #2c2c2a;
+  }
+  .head-title { font-size: 20px; font-weight: 500; color: #2c2c2a; }
+  .head-desc { font-size: 13px; color: #5f5e5a; margin-top: 4px; line-height: 1.6; }
+  .divider { border-bottom: 1px solid #e5e3db; margin: 10px 0 16px; }
+
+  svg text { font-family: inherit; }
+  .t  { font-size: 14px; fill: #2c2c2a; }
+  .ts { font-size: 12px; fill: #5f5e5a; }
+  .th { font-size: 14px; font-weight: 500; fill: #2c2c2a; }
+
+  .c-blue   > rect { fill: #E6F1FB; stroke: #185FA5; }
+  .c-blue   > .th, .c-blue > .t { fill: #0C447C; } .c-blue   > .ts { fill: #185FA5; }
+  .c-gray   > rect { fill: #F1EFE8; stroke: #5F5E5A; }
+  .c-gray   > .th, .c-gray > .t { fill: #2C2C2A; } .c-gray   > .ts { fill: #444441; }
+  .c-red    > rect { fill: #FCEBEB; stroke: #A32D2D; }
+  .c-red    > .th, .c-red > .t, .c-red > .ts { fill: #791F1F; }
+  .c-amber  > rect { fill: #FAEEDA; stroke: #854F0B; }
+  .c-amber  > .th, .c-amber > .t { fill: #633806; } .c-amber  > .ts { fill: #854F0B; }
+  .c-coral  > rect { fill: #FAECE7; stroke: #993C1D; }
+  .c-coral  > .th { fill: #712B13; } .c-coral > .ts { fill: #993C1D; }
+  .c-purple > rect { fill: #EEEDFE; stroke: #534AB7; }
+  .c-purple > .th { fill: #3C3489; } .c-purple > .ts { fill: #534AB7; }
+
+  #exec { transition: transform .45s ease; }
+  #exec.snap { transition: none; }
+  .slot, .arr-dyn { transition: opacity .35s ease; }
+
+  .controls { display: flex; gap: 14px; flex-wrap: wrap; align-items: center; margin-top: 10px; }
+  .status { margin-top: 12px; font-size: 13px; color: #5f5e5a; min-height: 20px; }
+  .btn { font: inherit; font-size: 13px; padding: 7px 14px; border-radius: 8px;
+         border: 1px solid #b4b2a9; background: #fff; color: #2c2c2a; cursor: pointer; }
+  .btn:hover { border-color: #185FA5; }
+  .btn.primary { background: #185FA5; color: #fff; border-color: #185FA5; }
+  .switch { display: flex; align-items: center; gap: 8px; cursor: pointer; user-select: none;
+            font-size: 13px; color: #5f5e5a; }
+  .track { position: relative; width: 34px; height: 18px; background: #b4b2a9; border-radius: 9px;
+           display: inline-block; transition: background .2s; flex: none; }
+  .track:has(input:checked) { background: #185FA5; }
+  .knob { position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; background: #fff;
+          border-radius: 50%; transition: transform .2s; pointer-events: none; }
+  .track input:checked ~ .knob { transform: translateX(16px); }
+  .track input { position: absolute; opacity: 0; width: 100%; height: 100%; cursor: pointer; margin: 0; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="head-title">Code cave e trampolim</div>
+  <div class="head-desc">Desvio por chamada de função: troca-se uma instrução por um salto para uma região de memória limpa, roda-se um código inserido mais a instrução original, e retorna-se ao programa — sem deslocar nada.</div>
+  <div class="divider"></div>
+
+  <svg width="100%" viewBox="0 0 680 420" role="img">
+  <title>Trampolim em memória, passo a passo</title>
+  <desc>O ponteiro avança uma caixinha por vez; sem a chamada desce reto, com a chamada na instrução 3 desvia para a região limpa e volta.</desc>
+  <defs>
+  <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker>
+  </defs>
+
+  <g class="c-blue"><rect x="40" y="36" width="230" height="360" rx="14" stroke-width="0.5"/>
+  <text class="th" x="58" y="60">Memória do programa</text></g>
+
+  <g id="row1" class="c-gray"><rect x="54" y="74" width="196" height="34" rx="8" stroke-width="0.5"/><text class="ts" x="70" y="96">Instrução 1</text></g>
+  <g id="row2" class="c-gray"><rect x="54" y="118" width="196" height="34" rx="8" stroke-width="0.5"/><text class="ts" x="70" y="140">Instrução 2</text></g>
+  <g id="row3" class="c-gray"><rect id="row3rect" x="54" y="162" width="196" height="34" rx="8" stroke-width="0.5"/><text id="row3txt" class="ts" x="70" y="184">Instrução 3</text></g>
+  <g id="row4" class="c-gray"><rect x="54" y="206" width="196" height="34" rx="8" stroke-width="0.5"/><text class="ts" x="70" y="228">Instrução 4</text></g>
+  <g id="row5" class="c-gray"><rect x="54" y="250" width="196" height="34" rx="8" stroke-width="0.5"/><text class="ts" x="70" y="272">Instrução 5</text></g>
+  <g id="row6" class="c-gray"><rect x="54" y="294" width="196" height="34" rx="8" stroke-width="0.5"/><text class="ts" x="70" y="316">Instrução 6</text></g>
+  <g id="row7" class="c-gray"><rect x="54" y="338" width="196" height="34" rx="8" stroke-width="0.5"/><text class="ts" x="70" y="360">Instrução 7</text></g>
+
+  <g class="c-amber"><rect x="396" y="90" width="244" height="252" rx="14" stroke-width="0.5"/>
+  <text class="th" x="416" y="114">Região de memória limpa</text>
+  <text class="ts" x="416" y="132">espaço livre do executável</text></g>
+
+  <g id="slotA" class="slot c-coral" opacity="0"><rect x="412" y="146" width="212" height="52" rx="8" stroke-width="1"/>
+  <text class="th" x="428" y="168">Código inserido</text>
+  <text class="ts" x="428" y="186">o que o invasor acrescenta</text></g>
+  <g id="slotB" class="slot c-blue" opacity="0"><rect x="412" y="206" width="212" height="52" rx="8" stroke-width="1"/>
+  <text class="th" x="428" y="228">Instrução original</text>
+  <text class="ts" x="428" y="246">a Instrução 3, guardada aqui</text></g>
+  <g id="slotC" class="slot c-purple" opacity="0"><rect x="412" y="266" width="212" height="52" rx="8" stroke-width="1"/>
+  <text class="th" x="428" y="288">Retorno</text>
+  <text class="ts" x="428" y="306">volta ao programa, no mesmo ponto</text></g>
+
+  <path id="jmpTo" class="arr-dyn" d="M252 179 L300 179 L300 172 L410 172" fill="none" stroke="#D85A30" stroke-width="2" opacity="0" marker-end="url(#arrow)"/>
+  <path id="jmpBack" class="arr-dyn" d="M410 292 L300 292 L300 223 L252 223" fill="none" stroke="#534AB7" stroke-width="2" opacity="0" marker-end="url(#arrow)"/>
+
+  <g id="exec" style="transform:translate(266px,91px)">
+  <circle cx="0" cy="0" r="7" fill="none" stroke="#185FA5" stroke-width="2"/>
+  <circle cx="0" cy="0" r="3" fill="#185FA5"/>
+  </g>
+  </svg>
+
+  <div class="status" id="status">Programa íntegro, sem a chamada. Ponteiro na Instrução 1 — play desce reto, uma caixinha por vez.</div>
+  <div class="controls">
+  <button class="btn primary" id="bPlay">▶ play (próximo passo)</button>
+  <button class="btn" id="b0">reiniciar</button>
+  <label class="switch">
+  <span class="track"><input type="checkbox" id="callsw"><span class="knob"></span></span>
+  chamada (call) na Instrução 3
+  </label>
+  </div>
+</div>
+
+<script>
+(function(){
+  var exec=document.getElementById('exec'), st=document.getElementById('status');
+  var patched=false, pos='i1';
+  var COORD={ i1:[266,91], i2:[266,135], i3:[266,179], i4:[266,223], i5:[266,267], i6:[266,311], i7:[266,355],
+              ca:[400,172], cb:[400,232], cc:[400,292] };
+  function move(s){ var c=COORD[s]; exec.style.transform='translate('+c[0]+'px,'+c[1]+'px)'; }
+  function snap(on){ exec.classList.toggle('snap',on); }
+  function say(t){ st.textContent=t; }
+  function set(id,op){ document.getElementById(id).setAttribute('opacity',op); }
+  function desc(s){
+    switch(s){
+      case 'i2': return 'Instrução 2.';
+      case 'i3': return patched ? 'Instrução 3: aqui está a chamada (call). Próximo play desvia para a direita.' : 'Instrução 3.';
+      case 'ca': return 'Desvio: saiu para a direita e executa o código inserido.';
+      case 'cb': return 'Executa a instrução original, que estava guardada na região limpa.';
+      case 'cc': return 'Retorno: pronto para voltar ao programa.';
+      case 'i4': return patched ? 'De volta ao programa: Instrução 4.' : 'Instrução 4.';
+      case 'i5': return 'Instrução 5.';
+      case 'i6': return 'Instrução 6.';
+      case 'i7': return 'Instrução 7 (última).';
+    }
+    return '';
+  }
+  function nextState(p){
+    if(p==='i3') return patched ? 'ca' : 'i4';
+    var m={ i1:'i2', i2:'i3', ca:'cb', cb:'cc', cc:'i4', i4:'i5', i5:'i6', i6:'i7', i7:'end' };
+    return m[p];
+  }
+  function step(){
+    if(pos==='end'){ pos='i1'; snap(true); move('i1'); setTimeout(function(){snap(false);},30); say('Reiniciado. Ponteiro na Instrução 1 — aperte play para avançar.'); return; }
+    var nx=nextState(pos);
+    if(nx==='end'){ pos='end'; say('Fim. O programa terminou. Play reinicia.'); return; }
+    pos=nx; snap(false); move(nx); say(desc(nx));
+  }
+  function setCall(on){
+    patched=on; pos='i1';
+    var r3=document.getElementById('row3'), rect=document.getElementById('row3rect'), txt=document.getElementById('row3txt');
+    var v=on?1:0;
+    ['slotA','slotB','slotC','jmpTo','jmpBack'].forEach(function(id){ set(id,v); });
+    if(on){ r3.setAttribute('class','c-red'); rect.setAttribute('stroke-width','1'); txt.textContent='Chamada de função (call) →';
+      say('Chamada ligada na Instrução 3. Ponteiro na Instrução 1 — play avança uma caixinha; na 3 ele desviará.'); }
+    else { r3.setAttribute('class','c-gray'); rect.setAttribute('stroke-width','0.5'); txt.textContent='Instrução 3';
+      say('Programa íntegro, sem a chamada. Ponteiro na Instrução 1 — play desce reto, uma caixinha por vez.'); }
+    snap(true); move('i1'); setTimeout(function(){snap(false);},30);
+  }
+  function reset(){
+    pos='i1'; snap(true); move('i1'); setTimeout(function(){snap(false);},30);
+    say(patched ? 'Reiniciado. Ponteiro na Instrução 1 — play avança; na 3 ele desviará.' : 'Reiniciado. Ponteiro na Instrução 1 — play desce reto, uma caixinha por vez.');
+  }
+  document.getElementById('bPlay').addEventListener('click', step);
+  document.getElementById('b0').addEventListener('click', reset);
+  document.getElementById('callsw').addEventListener('change', function(){ setCall(this.checked); });
+})();
+</script>
+</body>
+</html>
